@@ -1,175 +1,84 @@
-// Sélectionner les éléments nécessaires
-var plusBtns = document.querySelectorAll(".fa-plus-circle");
-var minusBtns = document.querySelectorAll(".fa-minus-circle");
-var trashBtns = document.querySelectorAll(".fa-trash-alt");
-var heartBtns = document.querySelectorAll(".fa-heart");
-var totalDisplay = document.querySelector(".total");
+// Sélectionner les éléments
+let plusButtons = Array.from(document.getElementsByClassName("fa-plus-circle"));
+let minusButtons = Array.from(document.getElementsByClassName("fa-minus-circle"));
+let trashButtons = Array.from(document.getElementsByClassName("fa-trash-alt"));
+let heartButtons = Array.from(document.getElementsByClassName("fa-heart"));
+let totalDisplay = document.querySelector(".total");
+
+// Boutons "+"
+for (let i = 0; i < plusButtons.length; i++) {
+  plusButtons[i].addEventListener("click", function () {
+    let quantitySpan = plusButtons[i].nextElementSibling;
+    quantitySpan.innerHTML++;
+    updateTotal();
+  });
+}
+
+// Boutons "-"
+for (let i = 0; i < minusButtons.length; i++) {
+  minusButtons[i].addEventListener("click", function () {
+    let quantitySpan = minusButtons[i].previousElementSibling;
+    if (parseInt(quantitySpan.innerHTML) > 0) {
+      quantitySpan.innerHTML--;
+      updateTotal();
+    }
+  });
+}
 
 // Fonction pour mettre à jour le total
 function updateTotal() {
-  var totalPrice = 0;
-  var allCards = document.querySelectorAll(".card");
+  let totalPrice = 0;
+  let cards = document.getElementsByClassName("card");
 
-  allCards.forEach(function (card) {
-    var quantity = parseInt(card.querySelector(".quantity").innerText);
-    var unitPrice = parseInt(
-      card.querySelector(".unit-price").innerText.replace(/[^\d.-]/g, '')
-    );
+  for (let i = 0; i < cards.length; i++) {
+    let quantity = parseInt(cards[i].querySelector(".quantity").innerHTML);
+    let unitPrice = parseInt(cards[i].querySelector(".unit-price").innerHTML.replace(" $", ""));
     totalPrice += quantity * unitPrice;
-  });
+  }
 
-  totalDisplay.innerText = totalPrice.toFixed(2) + " $";
-  // Sauvegarder le total dans localStorage si besoin
-  localStorage.setItem('totalPrice', totalPrice.toFixed(2));
+  totalDisplay.innerHTML = totalPrice.toFixed(2) + " $";
 }
 
-// Bouton +
-plusBtns.forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    var quantitySpan = this.parentElement.querySelector(".quantity");
-    var currentQuantity = parseInt(quantitySpan.innerText);
-    quantitySpan.innerText = currentQuantity + 1;
+// Boutons "Supprimer"
+for (let i = 0; i < trashButtons.length; i++) {
+  trashButtons[i].addEventListener("click", function () {
+    let card = trashButtons[i].closest(".card");
+    card.remove();
     updateTotal();
   });
-});
+}
 
-// Bouton -
-minusBtns.forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    var quantitySpan = this.parentElement.querySelector(".quantity");
-    var currentQuantity = parseInt(quantitySpan.innerText);
-    if (currentQuantity > 1) { // La quantité ne peut pas être inférieure à 1
-      quantitySpan.innerText = currentQuantity - 1;
-    }
-    updateTotal();
+// Boutons "Cœur"
+for (let i = 0; i < heartButtons.length; i++) {
+  heartButtons[i].addEventListener("click", function () {
+    heartButtons[i].classList.toggle("liked");
+    heartButtons[i].style.color = heartButtons[i].classList.contains("liked") ? "red" : "#6c757d";
   });
-});
+}
 
-// Supprimer un produit
-trashBtns.forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
-      this.closest(".card").remove();
-      updateTotal();
-    }
-  });
-});
+/* Recherche barre */
+const searchInput = document.getElementById("search-input");
+const productCards = document.querySelectorAll(".product-card");
 
-// Aimer un produit
-heartBtns.forEach(function (btn) {
-  btn.setAttribute('aria-label', 'Aimer ce produit'); // Ajout d'un attribut aria pour l'accessibilité
-  btn.addEventListener("click", function () {
-    this.classList.toggle("liked");
-    this.style.color = this.classList.contains("liked") ? "red" : "#6c757d";
-  });
-});
-
-// Sauvegarder et récupérer les données dans localStorage
-window.addEventListener('load', function () {
-  var savedTotalPrice = localStorage.getItem('totalPrice');
-  if (savedTotalPrice) {
-    totalDisplay.innerText = savedTotalPrice + " $";
-  }
-  
-  // Récupérer les informations sur les produits dans le localStorage (si nécessaire)
-  var savedProducts = JSON.parse(localStorage.getItem('products'));
-  if (savedProducts) {
-    savedProducts.forEach(function(product) {
-      var card = document.querySelector(`.card[data-id="${product.id}"]`);
-      if (card) {
-        var quantitySpan = card.querySelector(".quantity");
-        quantitySpan.innerText = product.quantity;
-      }
-    });
-  }
-});
-
-// Sauvegarder les produits dans le localStorage après chaque modification
-plusBtns.forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    var card = this.closest(".card");
-    var productId = card.getAttribute("data-id");
-    var quantitySpan = card.querySelector(".quantity");
-    var currentQuantity = parseInt(quantitySpan.innerText);
-    
-    var savedProducts = JSON.parse(localStorage.getItem('products')) || [];
-    var product = savedProducts.find(p => p.id === productId);
-    if (product) {
-      product.quantity = currentQuantity + 1;
-    } else {
-      savedProducts.push({ id: productId, quantity: currentQuantity + 1 });
-    }
-    localStorage.setItem('products', JSON.stringify(savedProducts));
-    updateTotal();
-  });
-});
-
-minusBtns.forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    var card = this.closest(".card");
-    var productId = card.getAttribute("data-id");
-    var quantitySpan = card.querySelector(".quantity");
-    var currentQuantity = parseInt(quantitySpan.innerText);
-    
-    if (currentQuantity > 1) {
-      var savedProducts = JSON.parse(localStorage.getItem('products')) || [];
-      var product = savedProducts.find(p => p.id === productId);
-      if (product) {
-        product.quantity = currentQuantity - 1;
-      }
-      localStorage.setItem('products', JSON.stringify(savedProducts));
-      updateTotal();
-    }
-  });
-});
-
-trashBtns.forEach(function (btn) {
-  btn.addEventListener("click", function () {
-    if (confirm("Voulez-vous vraiment supprimer ce produit ?")) {
-      var card = this.closest(".card");
-      var productId = card.getAttribute("data-id");
-
-      var savedProducts = JSON.parse(localStorage.getItem('products')) || [];
-      savedProducts = savedProducts.filter(p => p.id !== productId);
-      localStorage.setItem('products', JSON.stringify(savedProducts));
-      
-      card.remove();
-      updateTotal();
-    }
-  });
-});
-
-
-/*recherche barre */
-
-// Sélectionner les éléments nécessaires
-const searchInput = document.getElementById('search-input');
-const productCards = document.querySelectorAll('.product-card');
-
-// Fonction pour filtrer les produits en fonction de la recherche
 function searchProducts() {
-  const query = searchInput.value.toLowerCase(); // Récupère le texte recherché et le met en minuscule pour une comparaison insensible à la casse
+  const query = searchInput.value.toLowerCase();
 
-  // Parcours chaque carte de produit
-  productCards.forEach(function(card) {
-    const title = card.querySelector('.card-title').innerText.toLowerCase(); // Le nom du produit (titre)
-    const description = card.querySelector('.card-text').innerText.toLowerCase(); // Description du produit
+  productCards.forEach(function (card) {
+    const title = card.querySelector(".card-title").innerText.toLowerCase();
+    const description = card.querySelector(".card-text").innerText.toLowerCase();
 
-    // Si le titre ou la description contient le texte recherché, on affiche le produit, sinon on le cache
     if (title.includes(query) || description.includes(query)) {
-      card.style.display = 'block'; // Affiche le produit
+      card.style.display = "block";
     } else {
-      card.style.display = 'none'; // Cache le produit
+      card.style.display = "none";
     }
   });
 }
 
-// Ajouter un événement pour chaque saisie de l'utilisateur dans le champ de recherche
-searchInput.addEventListener('input', searchProducts);
+searchInput.addEventListener("input", searchProducts);
 
-// Optionnel : Empêcher l'envoi du formulaire de recherche pour éviter que la page se recharge
-const searchForm = document.getElementById('search-form');
-searchForm.addEventListener('submit', function(event) {
-  event.preventDefault(); // Empêche la soumission du formulaire
-  searchProducts(); // Lance la recherche
+const searchForm = document.getElementById("search-form");
+searchForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+  searchProducts();
 });
